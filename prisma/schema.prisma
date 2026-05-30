@@ -13,6 +13,24 @@ datasource db {
 }
 
 
+enum userStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum Role {
+  SUPER_ADMIN 
+  ADMIN 
+  DOCTOR
+  PATIENT
+}
+ 
+ enum Gender {
+  MALE
+  FEMALE
+  }
 
 model Specialty {
   id String @id @default(uuid(7))
@@ -31,18 +49,7 @@ model Specialty {
   @@index([title], name: "idx_specialty_title")
   @@map("specialties")
 }
- enum Role {
-  SUPER_ADMIN 
-  ADMIN 
-  DOCTOR
-  PATIENT
-}
-enum userStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-  DELETED
-}
+
 model User {
   id            String    @id
   name          String
@@ -50,8 +57,8 @@ model User {
   emailVerified Boolean   @default(false)
   role          Role      @default(PATIENT)
   status        userStatus @default(ACTIVE)
- needPasswordChange Boolean   @default(false)
- isDeleted     Boolean   @default(false)
+  needPasswordChange Boolean   @default(false)
+  isDeleted     Boolean   @default(false)
   deletedAt     DateTime?
   image         String?
   createdAt     DateTime  @default(now())

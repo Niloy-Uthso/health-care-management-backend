@@ -1,3 +1,4 @@
+import { success } from "better-auth"
 import { prisma } from "../../lib/prisma"
 
 interface doctorPayload{
@@ -29,23 +30,58 @@ catch(e){
     throw e;
 }}
 
-const deleteDoctor = async (id:string) => {
+const softDeleteDoctor = async (id:string) => {
 
     try{
     const result = await prisma.$transaction(async(tx)=>{
-        await tx.doctor.delete({
-            where:{
-                id:id
-            }
-        })
-    })
+       const doctor = await tx.doctor.findUnique({
+        where:{
+            id:id
+        },
+        select:{
+            userId:true
+        }
+        
+       })
+       if(!doctor){
+        throw new Error("Doctor not found");
+       }
 
+       const updatedDoctor = await tx.doctor.update({
+        where:{
+            id:id
+        },
+        data:{
+            isDeleted:true,
+            deletedAt:new Date()
+        }
+
+       })
+       await tx.user.update({
+        where:{
+            id:doctor.userId
+        },
+        data:{
+            isDeleted:true,
+            deletedAt:new Date(),
+            status:"DELETED"
+        }
+       })
+       return {
+        success : true,
+        message:"Doctor deleted successfully",
+        data:updatedDoctor
+       }
+    })
+        return result;
     }
     catch(e){
-        console.log("djhkfh",e)
+        console.error("Error deleting doctor:", e);
+        throw e;
     }
 }
 
 export const doctorService = {
-    getAllDoctors
+    getAllDoctors,
+    softDeleteDoctor
 }

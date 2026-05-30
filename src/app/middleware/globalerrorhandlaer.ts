@@ -1,10 +1,48 @@
-import { NextFunction, Request, Response } from "express"
+import e, { NextFunction, Request, Response } from "express"
+import status from "http-status";
+import z from "zod";
 
+interface TErrorsource{
+  path: string;
+  message: string;
+}
+/*
+ error.issues; 
+    /* [
+      {
+        expected: 'string',
+        code: 'invalid_type',
+        path: [ 'username' ],
+        message: 'Invalid input: expected string'
+      },
+      {
+        expected: 'number',
+        code: 'invalid_type',
+        path: [ 'xp' ],
+        message: 'Invalid input: expected number'
+      }
+    ] 
+*/
 export const globalErrorHandler = (err:Error,req:Request,res:Response,next:NextFunction)=>{
    
+const errorSources:TErrorsource[] = [];
+let statusCode:number = status.INTERNAL_SERVER_ERROR;
+let message:string= 'Internal Server Error';
 
-    res.status(500).json({
+if(err instanceof z.ZodError){
+  statusCode = status.BAD_REQUEST;
+  message= "Zod Validation Error";
+  err.issues.forEach((issue)=>{
+    errorSources.push({
+      path: issue.path.join('.'),
+      message: issue.message
+    })
+  })
+}
+    res.status(statusCode).json({
   success: false,
-    message: err.message || "Internal Server Error"
+    error: err.message,
+    message: message,
+    errorSources
 })
  }
