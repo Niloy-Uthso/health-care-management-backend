@@ -48,7 +48,7 @@ else if(err instanceof AppError){
   message = err.message;
   stack = err.stack;
   errorSources= [{
- path: '',
+  path: '',
     message: err.message
   }]
 }

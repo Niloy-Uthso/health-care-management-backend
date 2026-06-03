@@ -32,6 +32,28 @@ enum Role {
   FEMALE
   }
 
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  INPROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+}
 model Specialty {
   id String @id @default(uuid(7))
 
@@ -68,6 +90,8 @@ model User {
 
  patient      Patient?
   doctor       Doctor?
+   admin              Admin?
+   
   @@unique([email])
   @@map("user")
 }
@@ -137,10 +161,56 @@ model Patient{
   userId String @unique
   user User @relation(fields: [userId], references: [id], onDelete: Cascade,onUpdate: Cascade)
 
+  appointments      Appointment[]
+  prescriptions     Prescription[]
+  medicalReports    MedicalReport[]
+  reviews           Review[]
+  patientHealthData PatientHealthData?
+
 @@index([email],name:"idx_patient_email")
 @@index([isDeleted],name:"idx_patient_isdeleted")
 @@map("patient")
 
+}
+model PatientHealthData {
+  id                  String     @id @default(uuid(7))
+  gender              Gender
+  dateOfBirth         DateTime
+  bloodGroup          BloodGroup
+  hasAllergies        Boolean    @default(false)
+  hasDiabetes         Boolean    @default(false)
+  height              String
+  weight              String
+  smokingStatus       Boolean    @default(false)
+  dietaryPreferences  String?
+  pregnancyStatus     Boolean    @default(false)
+  mentalHealthHistory String?
+  immunizationStatus  String?
+  hasPastSurgeries    Boolean    @default(false)
+  recentAnxiety       Boolean    @default(false)
+  recentDepression    Boolean    @default(false)
+  maritalStatus       String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  patientId String  @unique
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("patient_health_data")
+}
+model MedicalReport {
+  id         String   @id @default(uuid(7))
+  reportName String
+  reportLink String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("medical_reports")
 }
 
 model Doctor{
@@ -165,7 +235,13 @@ model Doctor{
 
    userId String @unique
   user User @relation(fields: [userId], references: [id], onDelete: Cascade,onUpdate: Cascade)
+  
    doctorSpecialties DoctorSpecialty[]
+  appointments    Appointment[]
+  prescriptions   Prescription[]
+  reviews         Review[]
+  doctorSchedules DoctorSchedules[]
+
 
   @@index([email],name:"idx_doctor_email")
   @@index([isDeleted],name:"idx_doctor_isdeleted")
@@ -187,4 +263,143 @@ model DoctorSpecialty {
   @@index([doctorId],name:"idx_doctorspecialty_doctorid")
   @@index([specialtyId],name:"idx_doctorspecialty_specialtyid")
   @@map("doctor_specialties")
+}
+
+model Schedule {
+  id              String            @id @default(uuid(7))
+  startDate       DateTime
+  endDate         DateTime
+  startTime       DateTime
+  endTime         DateTime
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  doctorSchedules DoctorSchedules[]
+  appointments    Appointment[]
+
+  @@map("schedules")
+}
+
+model DoctorSchedules {
+  doctorId String
+  doctor   Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  scheduleId String
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  isBooked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([doctorId, scheduleId])
+  @@index([doctorId])
+  @@index([scheduleId])
+  @@map("doctor_schedules")
+}
+
+model Appointment {
+    id             String            @id @default(uuid(7))
+    videoCallingId String
+    status         AppointmentStatus @default(SCHEDULED)
+    paymentStatus  PaymentStatus     @default(UNPAID)
+    createdAt      DateTime          @default(now())
+    updatedAt      DateTime          @updatedAt
+
+    patientId String
+    patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+    doctorId String
+    doctor   Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+    scheduleId String
+    schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+    prescription Prescription?
+    review       Review?
+    payment      Payment?
+
+    @@index([patientId])
+    @@index([doctorId])
+    @@index([scheduleId])
+    @@index([status])
+    @@map("appointments")
+}
+
+model Prescription {
+  id           String   @id @default(uuid(7))
+  followUpDate DateTime
+  instructions String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  doctorId String
+  doctor   Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([appointmentId])
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("prescriptions")
+}
+
+model Review {
+  id        String   @id @default(uuid(7))
+  rating    Float    @default(0.0)
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  doctorId String
+  doctor   Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("reviews")
+}
+
+model Payment {
+    id                 String        @id @default(uuid(7))
+    amount             Float
+    transactionId      String        @unique
+    status             PaymentStatus @default(UNPAID)
+    paymentGatewayData Json?
+    createdAt          DateTime      @default(now())
+    updatedAt          DateTime      @updatedAt
+
+    appointmentId String      @unique
+    appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+    @@index([appointmentId])
+    @@index([transactionId])
+    @@map("payments")
+}
+
+model Admin {
+    id            String    @id @default(uuid(7))
+    name          String
+    email         String    @unique
+    profilePhoto  String?
+    contactNumber String?
+    isDeleted     Boolean   @default(false)
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    deletedAt     DateTime?
+
+    userId String @unique
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([email])
+    @@index([isDeleted])
+    @@map("admins")
 }

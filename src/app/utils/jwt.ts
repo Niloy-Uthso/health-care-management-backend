@@ -14,7 +14,7 @@ try{
     const decoded = jwt.verify(token,secret) as JwtPayload;
     return {
         success: true,
-        decoded
+            data:decoded
     };
 }catch(error:any){
      return {

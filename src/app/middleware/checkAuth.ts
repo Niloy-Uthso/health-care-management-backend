@@ -15,7 +15,7 @@ export const checkAuth = (...authRoles:Role[]) => async (req:Request, res:Respon
     try{
 
 
-        const sessionToken = CookieUtils.getCookie(req, 'sessionToken')
+        const sessionToken = CookieUtils.getCookie(req, 'better-auth.session_token')
         if (!sessionToken) {
             throw new Error('Unauthorized: No session token provided');
         }
@@ -63,6 +63,12 @@ export const checkAuth = (...authRoles:Role[]) => async (req:Request, res:Respon
             if(authRoles.length>0 && !authRoles.includes(user.role)){
                 throw new AppError(status.FORBIDDEN, 'Forbidden: Insufficient permissions');
             }
+
+            req.user = {
+                userId: user.id,
+                role: user.role,
+                email: user.email,
+            }
             return next()
         }
 
@@ -86,9 +92,9 @@ export const checkAuth = (...authRoles:Role[]) => async (req:Request, res:Respon
 
         if(authRoles.length>0 && !authRoles.includes(verifiedToken.decoded!.role as Role)){
                  throw new AppError(status.FORBIDDEN, 'Forbidden: Insufficient permissions');
-
-
         }
+
+       
         next();
 
 }  catch(err:any){
