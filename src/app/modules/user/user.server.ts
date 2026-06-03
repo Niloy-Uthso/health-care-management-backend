@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { Role, Specialty } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import { auth } from "../../lib/auth";
+import AppError from "../../errorHandlers/handleErrors";
+import status from "http-status";
 
 /*
 model Doctor{
@@ -65,9 +67,10 @@ interface createDoctorPayload {
             });
 
         if (!specialtyRecord) {
-            throw new Error(
-                `Specialty with id ${specialtyId} not found`
-            );
+            // throw new Error(
+            //     `Specialty with id ${specialtyId} not found`
+            // );
+            throw new AppError(status.NOT_FOUND, `Specialty with id ${specialtyId} not found`)
         }
 
         specialties.push(specialtyRecord);
@@ -80,9 +83,10 @@ interface createDoctorPayload {
     });
 
     if (userExists) {
-        throw new Error(
-            "User with this email already exists"
-        );
+        // throw new Error(
+        //     "User with this email already exists"
+        // );
+        throw new AppError(status.BAD_REQUEST, "User with this email already exists")
     }
 
     const userData = await auth.api.signUpEmail({

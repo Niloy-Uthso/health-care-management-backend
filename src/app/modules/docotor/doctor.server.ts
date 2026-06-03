@@ -1,5 +1,7 @@
 import { success } from "better-auth"
 import { prisma } from "../../lib/prisma"
+import AppError from "../../errorHandlers/handleErrors"
+import status from "http-status"
 
 interface doctorPayload{
     name?: string
@@ -44,7 +46,8 @@ const softDeleteDoctor = async (id:string) => {
         
        })
        if(!doctor){
-        throw new Error("Doctor not found");
+        // throw new Error("Doctor not found");
+        throw new AppError(status.NOT_FOUND, "Doctor not found")
        }
 
        const updatedDoctor = await tx.doctor.update({

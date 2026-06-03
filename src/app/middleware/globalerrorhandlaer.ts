@@ -1,7 +1,8 @@
 import e, { NextFunction, Request, Response } from "express"
 import status from "http-status";
 import z from "zod";
-
+import AppError from "../errorHandlers/handleErrors";
+ 
 interface TErrorsource{
   path: string;
   message: string;
@@ -25,9 +26,11 @@ interface TErrorsource{
 */
 export const globalErrorHandler = (err:Error,req:Request,res:Response,next:NextFunction)=>{
    
-const errorSources:TErrorsource[] = [];
+let errorSources:TErrorsource[] = [];
+
 let statusCode:number = status.INTERNAL_SERVER_ERROR;
 let message:string= 'Internal Server Error';
+let stack:string | undefined = undefined;
 
 if(err instanceof z.ZodError){
   statusCode = status.BAD_REQUEST;
@@ -38,11 +41,33 @@ if(err instanceof z.ZodError){
       message: issue.message
     })
   })
+} 
+
+else if(err instanceof AppError){
+  statusCode = err.statusCode;
+  message = err.message;
+  stack = err.stack;
+  errorSources= [{
+ path: '',
+    message: err.message
+  }]
+}
+
+else if(err instanceof Error){
+  statusCode = status.INTERNAL_SERVER_ERROR;
+  message = err.message;
+  stack= err.stack;
+  errorSources= [{  
+    path: '',
+    message: err.message
+  }]
+  
 }
     res.status(statusCode).json({
-  success: false,
+    success: false,
     error: err.message,
     message: message,
-    errorSources
+    errorSources,
+    stack
 })
  }

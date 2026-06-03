@@ -6,6 +6,7 @@ import { globalErrorHandler } from "./app/middleware/globalerrorhandlaer";
 import { notfound } from "./app/middleware/notfound";
 import { userRoute } from "./app/modules/user/user.route";
 import { doctorRoute } from "./app/modules/docotor/doctor.router";
+import cookieParser from "cookie-parser";
 
 const app: Application = express();
 
@@ -13,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.use(express.json());
-
+app.use(cookieParser())
 app.use("/api/v1/specialty",SpecialtyRoute)
 
 app.use("/api/v1/auth", AuthRouter)
