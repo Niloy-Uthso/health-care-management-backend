@@ -7,8 +7,13 @@ import { notfound } from "./app/middleware/notfound";
 import { userRoute } from "./app/modules/user/user.route";
 import { doctorRoute } from "./app/modules/docotor/doctor.router";
 import cookieParser from "cookie-parser";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./app/lib/auth";
 
 const app: Application = express();
+
+app.use("/api/auth",toNodeHandler(auth))
+
 
 app.use(express.urlencoded({ extended: true }));
 
